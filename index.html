@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>LiveSport TV</title>
+<style>
+:root{
+  --bg:#05080d;
+  --panel:#0d141d;
+  --panel2:#131c28;
+  --line:#1c2735;
+  --line2:#2a3a4d;
+  --text:#eaf1fa;
+  --muted:#8598ae;
+  --accent:#22d3ee;
+  --accent2:#38bdf8;
+  --live:#ff2d55;
+  --r:18px;
+}
+html{font-size:clamp(17px, 0.95vw + 8px, 24px);}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;overflow-x:hidden}
+body{
+  background:
+    radial-gradient(1400px 700px at 88% -12%, #0b2b33 0%, transparent 60%),
+    radial-gradient(1000px 600px at -5% 0%, #191232 0%, transparent 55%),
+    var(--bg);
+  color:var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  -webkit-font-smoothing:antialiased;
+  user-select:none;
+  -webkit-user-select:none;
+  -webkit-tap-highlight-color:transparent;
+  cursor:default;
+  overscroll-behavior:none;
+  min-height:100vh;
+}
+img{max-width:100%;display:block}
+button{font:inherit;color:inherit}
+
+/* ============ TOP BAR ============ */
+.topbar{
+  position:sticky;top:0;z-index:60;
+  display:flex;align-items:center;gap:1rem;
+  padding:.75rem 1.5rem;
+  background:rgba(5,8,13,.9);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--line);
+}
+.brand{
+  display:flex;align-items:center;gap:.6rem;
+  font-weight:800;font-size:1.15rem;letter-spacing:-.02em;
+  white-space:nowrap;
+}
+.brand .mark{
+  display:grid;place-items:center;width:2rem;height:2rem;
+  border-radius:.65rem;font-size:.8rem;color:#04121a;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  box-shadow:0 6px 22px -6px var(--accent);
+}
+.brand b{color:var(--accent)}
+
+.spacer{flex:1}
+
+.hint{
+  font-size:.68rem;color:#5d7086;letter-spacing:.04em;
+  white-space:nowrap;text-align:right;line-height:1.5;
+}
+.hint kbd{
+  display:inline-block;padding:.1em .4em;border-radius:.35em;
+  background:var(--panel2);border:1px solid var(--line2);
+  color:#9fb3c8;font-family:inherit;font-size:.62rem;
+}
+
+/* ============ TOGGLE ============ */
+.toggle{
+  display:inline-flex;align-items:center;gap:.55rem;
+  padding:.6rem 1.1rem;border-radius:999px;
+  border:1px solid var(--line2);background:var(--panel);
+  color:var(--muted);font-size:.78rem;font-weight:800;
+  letter-spacing:.06em;text-transform:uppercase;
+  cursor:pointer;transition:.15s;white-space:nowrap;
+  position:relative;
+}
+.toggle .dot{width:.5rem;height:.5rem;border-radius:50%;background:#5d7086;transition:.15s}
+.toggle[aria-pressed="true"]{
+  background:rgba(255,45,85,.16);
+  border-color:rgba(255,45,85,.55);
+  color:#ff8ea3;
+}
+.toggle[aria-pressed="true"] .dot{background:var(--live);animation:pulse 1.4s infinite}
+
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.7)}}
+
+/* ============ CHIPS ============ */
+.chips-wrap{
+  position:sticky;top:3.6rem;z-index:55;
+  background:rgba(5,8,13,.88);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--line);
+  padding:.7rem 1.5rem;
+}
+.chips{
+  display:flex;gap:.6rem;overflow-x:auto;scrollbar-width:none;
+  scroll-behavior:smooth;padding:.15rem;
+}
+.chips::-webkit-scrollbar{display:none}
+.chip{
+  flex:none;display:inline-flex;align-items:center;gap:.5rem;
+  padding:.62rem 1.15rem;border-radius:999px;
+  border:1px solid var(--line);background:var(--panel);
+  color:var(--muted);font-size:.8rem;font-weight:700;
+  cursor:pointer;transition:.15s;white-space:nowrap;
+  position:relative;
+}
+.chip .n{
+  font-size:.68rem;font-weight:800;color:#6b7f96;
+  background:rgba(255,255,255,.06);padding:.1em .5em;border-radius:999px;
+}
+.chip.active{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#04121a;border-color:transparent;
+}
+.chip.active .n{background:rgba(4,18,26,.2);color:#04121a}
+
+/* ============ STATUS LINE ============ */
+.statusline{
+  display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;
+  padding:1.1rem 1.5rem .4rem;
+  font-size:.8rem;color:var(--muted);
+}
+.statusline strong{color:var(--text);font-weight:800;font-size:.95rem}
+.live-pill{
+  display:inline-flex;align-items:center;gap:.4rem;
+  padding:.22em .7em;border-radius:999px;
+  font-size:.68rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase;
+  background:rgba(255,45,85,.14);color:#ff6b87;
+  border:1px solid rgba(255,45,85,.32);
+}
+.live-pill .d{width:.4rem;height:.4rem;border-radius:50%;background:var(--live);animation:pulse 1.4s infinite}
+
+/* ============ GRID ============ */
+.grid{
+  display:grid;gap:1rem;
+  grid-template-columns:repeat(auto-fill, minmax(15rem, 1fr));
+  padding:1rem 1.5rem 4rem;
+}
+@media (min-width:1600px){
+  .grid{grid-template-columns:repeat(auto-fill, minmax(17rem, 1fr));gap:1.2rem}
+}
+
+/* ============ CARD ============ */
+.card{
+  position:relative;
+  display:flex;flex-direction:column;
+  padding:0;border:1px solid var(--line);
+  border-radius:var(--r);overflow:hidden;
+  background:var(--panel);
+  cursor:pointer;text-align:left;
+  transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+  will-change:transform;
+}
+.card .thumb{
+  position:relative;aspect-ratio:16/9;overflow:hidden;
+  background:linear-gradient(135deg,#111b27,#080d14);
+  flex:none;
+}
+.card .thumb img.cover{
+  width:100%;height:100%;object-fit:cover;
+  transition:transform .4s ease;
+}
+.card:hover .thumb img.cover{transform:scale(1.05)}
+
+.card .fallback{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;gap:.9rem;
+  padding:1rem;
+}
+.card .fallback img{
+  width:3rem;height:3rem;object-fit:contain;
+  filter:drop-shadow(0 6px 14px rgba(0,0,0,.7));
+}
+.card .fallback .vs{
+  font-size:.62rem;font-weight:900;letter-spacing:.16em;color:#4d6076;
+}
+
+.card .badge{
+  position:absolute;top:.55rem;left:.55rem;
+  display:inline-flex;align-items:center;gap:.35rem;
+  padding:.28em .7em;border-radius:999px;
+  font-size:.6rem;font-weight:900;letter-spacing:.09em;text-transform:uppercase;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+}
+.card .badge.live{
+  background:rgba(255,45,85,.95);color:#fff;
+  box-shadow:0 4px 18px -4px rgba(255,45,85,.9);
+}
+.card .badge.live .d{width:.4rem;height:.4rem;border-radius:50%;background:#fff;animation:pulse 1.4s infinite}
+.card .badge.ns{background:rgba(6,10,16,.82);color:#cfe3f5;border:1px solid rgba(255,255,255,.14)}
+.card .badge.ft{background:rgba(6,10,16,.82);color:#93a6bd;border:1px solid rgba(255,255,255,.1)}
+
+.card .sport{
+  position:absolute;top:.55rem;right:.55rem;max-width:55%;
+  padding:.28em .7em;border-radius:999px;
+  font-size:.6rem;font-weight:800;
+  background:rgba(6,10,16,.8);color:#b8cfe6;
+  border:1px solid rgba(255,255,255,.1);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+
+.card .body{
+  display:flex;flex-direction:column;gap:.35rem;
+  padding:.75rem .9rem .85rem;flex:1;
+}
+.card .title{
+  font-size:.85rem;font-weight:800;line-height:1.3;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+  overflow:hidden;
+}
+.card .meta{
+  font-size:.68rem;color:var(--muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.card .foot{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:.5rem;margin-top:auto;padding-top:.35rem;
+}
+.card .score{
+  font-size:.95rem;font-weight:900;color:var(--accent);
+  font-variant-numeric:tabular-nums;letter-spacing:.02em;
+}
+.card .time{
+  font-size:.68rem;font-weight:700;color:#9fb3c8;
+  font-variant-numeric:tabular-nums;
+}
+.card .play{
+  display:inline-flex;align-items:center;gap:.35rem;
+  font-size:.66rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase;
+  color:#04121a;background:linear-gradient(135deg,var(--accent),var(--accent2));
+  padding:.35em .75em;border-radius:.5rem;
+}
+.card .play svg{width:.5rem;height:.5rem;fill:currentColor}
+
+/* ============ FOCUS RING (TV) ============ */
+.nav-item:focus{
+  outline:none;
+  box-shadow:
+    0 0 0 .18rem #05080d,
+    0 0 0 .42rem var(--accent),
+    0 0 2.2rem rgba(34,211,238,.45);
+  z-index:10;
+}
+.card:focus{
+  transform:scale(1.045);
+  border-color:transparent;
+}
+.chip:focus,.toggle:focus{transform:scale(1.06)}
+.toggle:focus,.chip:focus{z-index:10}
+
+/* ============ SKELETON ============ */
+.skel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.skel .s-thumb{aspect-ratio:16/9}
+.skel .s-line{height:.55rem;border-radius:.3rem;margin:.75rem .9rem}
+.skel .s-line.w60{width:60%}
+.skel .s-line.w35{width:35%;margin-bottom:1rem}
+.skel .s-thumb,.skel .s-line{
+  background:linear-gradient(100deg,#0f1722 30%,#17212f 50%,#0f1722 70%);
+  background-size:200% 100%;
+  animation:shimmer 1.5s infinite;
+}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ============ STATES ============ */
+.state{
+  grid-column:1/-1;text-align:center;
+  padding:4rem 1.5rem;
+  border:1px dashed var(--line2);border-radius:1.2rem;
+  background:rgba(13,20,29,.55);
+}
+.state .em{font-size:2.6rem;margin-bottom:.6rem;opacity:.85}
+.state h3{margin:0 0 .5rem;font-size:1.1rem}
+.state p{margin:0 auto;max-width:26rem;color:var(--muted);font-size:.8rem;line-height:1.7}
+.state .retry{
+  margin-top:1.2rem;padding:.65rem 1.5rem;border-radius:.7rem;
+  border:1px solid var(--line2);background:var(--panel2);
+  color:var(--text);font-size:.8rem;font-weight:800;cursor:pointer;
+}
+.state .retry:focus{box-shadow:0 0 0 .18rem #05080d,0 0 0 .42rem var(--accent)}
+
+/* ============ MODAL / PLAYER ============ */
+.modal{
+  position:fixed;inset:0;z-index:200;
+  display:none;flex-direction:column;
+  background:#000;
+}
+.modal.open{display:flex}
+.modal-head{
+  display:flex;align-items:center;gap:1rem;
+  padding:.7rem 1.2rem;flex:none;
+  background:#0a1017;border-bottom:1px solid var(--line);
+}
+.modal-head .t{min-width:0;flex:1}
+.modal-head h2{
+  margin:0;font-size:.95rem;font-weight:800;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.modal-head .m{
+  margin-top:.15rem;font-size:.68rem;color:var(--muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.close-btn{
+  flex:none;display:inline-flex;align-items:center;gap:.45rem;
+  padding:.55rem 1.1rem;border-radius:.65rem;
+  border:1px solid var(--line2);background:var(--panel2);
+  color:var(--text);font-size:.78rem;font-weight:900;
+  letter-spacing:.05em;cursor:pointer;transition:.15s;
+  position:relative;
+}
+.close-btn svg{width:.8rem;height:.8rem;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round}
+.close-btn:hover{border-color:var(--live);color:#ff8ea3;background:rgba(255,45,85,.14)}
+
+.player-wrap{flex:1;position:relative;background:#000;min-height:0}
+.player-wrap iframe{
+  position:absolute;inset:0;width:100%;height:100%;border:0;display:block;
+}
+.modal-foot{
+  flex:none;padding:.5rem 1.2rem;
+  font-size:.66rem;color:#5d7086;
+  background:#0a1017;border-top:1px solid var(--line);
+  display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;
+}
+
+/* ============ FOOTER ============ */
+.site-footer{
+  padding:0 1.5rem 3rem;
+  font-size:.66rem;color:#4a5b6e;line-height:1.7;
+  max-width:70rem;
+}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+</style>
+</head>
+<body>
+
+<!-- ================= TOP BAR ================= -->
+<header class="topbar">
+  <div class="brand">
+    <span class="mark" aria-hidden="true">▶</span>
+    <span>Live<b>Sport</b></span>
+  </div>
+  <div class="spacer"></div>
+  <button class="nav-item toggle" id="liveToggle" aria-pressed="false">
+    <span class="dot"></span> Live only
+  </button>
+</header>
+
+<!-- ================= SPORT CHIPS ================= -->
+<div class="chips-wrap">
+  <div class="chips" id="chips" role="tablist" aria-label="Filter by sport"></div>
+</div>
+
+<!-- ================= CONTENT ================= -->
+<main>
+  <div class="statusline" id="statusline">Loading events…</div>
+  <div class="grid" id="grid"></div>
+</main>
+
+<footer class="site-footer">
+  Streams and event data come from a third-party provider. This page only indexes publicly available embeds and hosts no video content.
+</footer>
+
+<!-- ================= PLAYER ================= -->
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal-head">
+    <div class="t">
+      <h2 id="modalTitle">Event</h2>
+      <div class="m" id="modalMeta"></div>
+    </div>
+    <button class="nav-item close-btn" id="closeBtn" aria-label="Close player">
+      <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg> BACK
+    </button>
+  </div>
+  <div class="player-wrap">
+    <iframe id="frame"
+            src="about:blank"
+            title="Stream player"
+            tabindex="0"
+            allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+            allowfullscreen
+            referrerpolicy="no-referrer-when-downgrade"></iframe>
+  </div>
+  <div class="modal-foot">
+    <span>Press <b>BACK</b> on your remote to exit the player.</span>
+    <span>Streams may contain ads.</span>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ================================================================
+     CONFIG
+     ================================================================ */
+  var API_URL    = "https://cinevid.st/api/public/events";
+  var BASE_URL   = "https://cinevid.st";
+  var REFRESH_MS = 60000;
+
+  /* ================================================================
+     DOM
+     ================================================================ */
+  var els = {
+    grid:       document.getElementById("grid"),
+    chips:      document.getElementById("chips"),
+    statusline: document.getElementById("statusline"),
+    liveToggle: document.getElementById("liveToggle"),
+    modal:      document.getElementById("modal"),
+    frame:      document.getElementById("frame"),
+    modalTitle: document.getElementById("modalTitle"),
+    modalMeta:  document.getElementById("modalMeta"),
+    closeBtn:   document.getElementById("closeBtn")
+  };
+
+  /* ================================================================
+     STATE
+     ================================================================ */
+  var events      = [];
+  var byId        = {};
+  var lastSig     = "";
+  var lastListIds = "";
+  var playerOpen  = false;
+  var returnFocus = null;
+  var filters     = { sport: "All", liveOnly: false };
+
+  /* ================================================================
+     HELPERS
+     ================================================================ */
+  function esc(v) {
+    return String(v == null ? "" : v).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function abs(p) {
+    if (!p || typeof p !== "string") return null;
+    try { return new URL(p, BASE_URL).href; } catch (e) { return null; }
+  }
+
+  function kickoffDate(e) {
+    if (!e || !e.date) return null;
+    var t = String(e.time || "").slice(0, 5) || "00:00";
+    var d = new Date(e.date + "T" + t + ":00Z");
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  function statusKey(e) {
+    var s = String(e && e.status != null ? e.status : "").trim().toLowerCase();
+    if (!s || s === "ns" || s === "not started" || s === "scheduled") return "ns";
+    if (s.indexOf("live") !== -1 || s === "ht" || s === "1h" || s === "2h") return "live";
+    return "ft";
+  }
+
+  function statusLabel(e) {
+    var k = statusKey(e);
+    if (k === "live") return "Live";
+    if (k === "ns")   return "Upcoming";
+    return (e.status && String(e.status).trim()) || "Finished";
+  }
+
+  function fmtKickoff(e) {
+    var d = kickoffDate(e);
+    if (!d) return "TBA";
+    var time = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    var day = new Date(d); day.setHours(0, 0, 0, 0);
+    var diff = Math.round((day - today) / 86400000);
+    if (diff === 0) return "Today " + time;
+    if (diff === 1) return "Tmrw " + time;
+    if (diff === -1) return "Yest " + time;
+    return d.toLocaleDateString([], { day: "numeric", month: "short" }) + " " + time;
+  }
+
+  var ORDER = { live: 0, ns: 1, ft: 2 };
+
+  function compareEvents(a, b) {
+    var d = ORDER[statusKey(a)] - ORDER[statusKey(b)];
+    if (d !== 0) return d;
+    var ta = kickoffDate(a) ? kickoffDate(a).getTime() : Infinity;
+    var tb = kickoffDate(b) ? kickoffDate(b).getTime() : Infinity;
+    return statusKey(a) === "ft" ? tb - ta : ta - tb;
+  }
+
+  function visibleEvents() {
+    return events.filter(function (e) {
+      if (filters.liveOnly && statusKey(e) !== "live") return false;
+      if (filters.sport !== "All" && (e.sport || "Other") !== filters.sport) return false;
+      return true;
+    }).sort(compareEvents);
+  }
+
+  /* ================================================================
+     SPATIAL NAVIGATION  (D-pad)
+     ================================================================ */
+  function navItems() {
+    var all = document.querySelectorAll(".nav-item");
+    var out = [];
+    for (var i = 0; i < all.length; i++) {
+      var el = all[i];
+      if (playerOpen !== els.modal.contains(el)) continue;   // scope to modal when open
+      if (el.disabled) continue;
+      var r = el.getBoundingClientRect();
+      if (r.width < 2 || r.height < 2) continue;
+      out.push(el);
+    }
+    return out;
+  }
+
+  function moveFocus(dir) {
+    var items = navItems();
+    if (!items.length) return;
+
+    var cur = document.activeElement;
+    if (items.indexOf(cur) === -1) { items[0].focus(); return; }
+
+    var cr = cur.getBoundingClientRect();
+    var ccx = cr.left + cr.width / 2;
+    var ccy = cr.top + cr.height / 2;
+
+    var best = null, bestScore = Infinity;
+
+    for (var i = 0; i < items.length; i++) {
+      var el = items[i];
+      if (el === cur) continue;
+
+      var r  = el.getBoundingClientRect();
+      var cx = r.left + r.width / 2;
+      var cy = r.top + r.height / 2;
+      var dx = cx - ccx;
+      var dy = cy - ccy;
+
+      var primary, secondary;
+
+      if (dir === "left")  { if (dx >= -1) continue; primary = -dx; secondary = Math.abs(dy); }
+      else if (dir === "right") { if (dx <= 1) continue; primary = dx; secondary = Math.abs(dy); }
+      else if (dir === "up")    { if (dy >= -1) continue; primary = -dy; secondary = Math.abs(dx); }
+      else                      { if (dy <= 1) continue; primary = dy; secondary = Math.abs(dx); }
+
+      // Heavy penalty for drifting off-axis → keeps rows/columns aligned.
+      var score = primary + secondary * 3;
+      if (score < bestScore) { bestScore = score; best = el; }
+    }
+
+    if (best) {
+      best.focus();
+      best.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
+    }
+  }
+
+  function dirFromEvent(ev) {
+    var byKey = {
+      ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down",
+      Left: "left", Right: "right", Up: "up", Down: "down"
+    };
+    var byCode = { 37: "left", 38: "up", 39: "right", 40: "down" };
+    return byKey[ev.key] || byCode[ev.keyCode] || null;
+  }
+
+  document.addEventListener("keydown", function (ev) {
+    if (ev.altKey || ev.ctrlKey || ev.metaKey) return;
+
+    var dir = dirFromEvent(ev);
+    if (dir) {
+      ev.preventDefault();
+      moveFocus(dir);
+      return;
+    }
+
+    // BACK / ESC
+    var isBack = ev.key === "Escape" || ev.key === "Backspace" ||
+                 ev.keyCode === 461 || ev.keyCode === 10009 || ev.keyCode === 27;
+    if (isBack && playerOpen) {
+      ev.preventDefault();
+      requestClose();
+    }
+  }, false);
+
+  /* ================================================================
+     CHIPS
+     ================================================================ */
+  function renderChips() {
+    var counts = {};
+    for (var i = 0; i < events.length; i++) {
+      var s = events[i].sport || "Other";
+      counts[s] = (counts[s] || 0) + 1;
+    }
+
+    if (filters.sport !== "All" && !counts[filters.sport]) filters.sport = "All";
+
+    var sports = Object.keys(counts).sort(function (a, b) {
+      return (counts[b] - counts[a]) || a.localeCompare(b);
+    });
+
+    var items = [{ name: "All", n: events.length }];
+    for (var j = 0; j < sports.length; j++) items.push({ name: sports[j], n: counts[sports[j]] });
+
+    var html = "";
+    for (var k = 0; k < items.length; k++) {
+      var it = items[k];
+      var active = filters.sport === it.name;
+      html += '<button class="nav-item chip' + (active ? " active" : "") + '" ' +
+              'role="tab" aria-selected="' + active + '" data-sport="' + esc(it.name) + '">' +
+              esc(it.name) + '<span class="n">' + it.n + "</span></button>";
+    }
+    els.chips.innerHTML = html;
+  }
+
+  els.chips.addEventListener("click", function (ev) {
+    var chip = ev.target.closest(".chip");
+    if (!chip) return;
+    filters.sport = chip.dataset.sport;
+    lastSig = "";
+    renderChips();
+    renderGrid();
+  });
+
+  /* ================================================================
+     CARDS
+     ================================================================ */
+  function cardHTML(e) {
+    var key   = statusKey(e);
+    var title = e.title || "Untitled event";
+    var thumb = abs(e.thumbnail);
+    var home  = abs(e.homeTeamImage);
+    var away  = abs(e.awayTeamImage);
+    var score = (e.score != null && String(e.score).trim() && String(e.score).trim() !== "null")
+              ? String(e.score).trim() : "";
+    var league = e.league || "";
+    var round  = e.round || "";
+    var sport  = e.sport || "Other";
+
+    var badge = key === "live"
+      ? '<span class="badge live"><span class="d"></span>Live</span>'
+      : '<span class="badge ' + key + '">' + esc(statusLabel(e)) + "</span>";
+
+    var meta = [league, round].filter(Boolean).join(" · ");
+
+    var fallback = "";
+    if (home || away) {
+      fallback = '<div class="fallback">' +
+        (home ? '<img src="' + esc(home) + '" alt="" loading="lazy" onerror="this.remove()">' : "") +
+        '<span class="vs">VS</span>' +
+        (away ? '<img src="' + esc(away) + '" alt="" loading="lazy" onerror="this.remove()">' : "") +
+        "</div>";
+    }
+
+    return '<button class="nav-item card" data-id="' + esc(e.id) + '" ' +
+             'aria-label="Watch ' + esc(title) + '">' +
+             '<div class="thumb">' +
+               fallback +
+               (thumb ? '<img class="cover" src="' + esc(thumb) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">' : "") +
+               badge +
+               '<span class="sport">' + esc(sport) + "</span>" +
+             "</div>" +
+             '<div class="body">' +
+               '<div class="title">' + esc(title) + "</div>" +
+               (meta ? '<div class="meta">' + esc(meta) + "</div>" : "") +
+               '<div class="foot">' +
+                 (score ? '<span class="score">' + esc(score) + "</span>" : "<span></span>") +
+                 '<span class="time">' + esc(fmtKickoff(e)) + "</span>" +
+                 '<span class="play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>Watch</span>' +
+               "</div>" +
+             "</div>" +
+           "</button>";
+  }
+
+  function skeletonHTML() {
+    var out = "";
+    for (var i = 0; i < 10; i++) {
+      out += '<div class="skel" aria-hidden="true"><div class="s-thumb"></div>' +
+             '<div class="s-line w60"></div><div class="s-line w35"></div></div>';
+    }
+    return out;
+  }
+
+  function emptyHTML() {
+    return '<div class="state">' +
+      '<div class="em">🏟️</div>' +
+      "<h3>No events found</h3>" +
+      "<p>Try another sport, or turn off “Live only” in the top right corner.</p>" +
+      "</div>";
+  }
+
+  function renderStatusLine() {
+    var list = visibleEvents();
+    var liveCount = 0;
+    for (var i = 0; i < events.length; i++) if (statusKey(events[i]) === "live") liveCount++;
+
+    els.statusline.innerHTML =
+      "<strong>" + list.length + "</strong> event" + (list.length === 1 ? "" : "s") +
+      (liveCount ? ' <span class="live-pill"><span class="d"></span>' + liveCount + " live</span>" : "");
+  }
+
+  function renderGrid(force) {
+    var list = visibleEvents();
+
+    var sig = list.map(function (e) {
+      return e.id + "~" + e.status + "~" + e.score;
+    }).join("|") + "#" + filters.sport + "#" + filters.liveOnly;
+
+    if (!force && sig === lastSig) return;
+
+    // Remember which card has focus so a refresh doesn't lose your place.
+    var activeEl = document.activeElement;
+    var keepId = (activeEl && activeEl.classList && activeEl.classList.contains("card"))
+               ? activeEl.dataset.id : null;
+
+    var hadFocus = !!keepId;
+    lastSig = sig;
+
+    els.grid.innerHTML = list.length ? list.map(cardHTML).join("") : emptyHTML();
+
+    if (hadFocus) {
+      var sel = '.card[data-id="' + (window.CSS && CSS.escape ? CSS.escape(keepId) : keepId) + '"]';
+      var el = els.grid.querySelector(sel);
+      if (el) el.focus({ preventScroll: true });
+    }
+
+    // On very first paint, put the remote's focus on the first card.
+    if (!hadFocus && !document.activeElement.classList.contains("nav-item")) {
+      var first = els.grid.querySelector(".card");
+      if (first) first.focus({ preventScroll: true });
+    }
+
+    lastListIds = list.map(function (e) { return e.id; }).join(",");
+  }
+
+  /* ================================================================
+     LIVE-ONLY TOGGLE
+     ================================================================ */
+  els.liveToggle.addEventListener("click", function () {
+    filters.liveOnly = !filters.liveOnly;
+    els.liveToggle.setAttribute("aria-pressed", String(filters.liveOnly));
+    renderGrid(true);
+    renderStatusLine();
+  });
+
+  /* ================================================================
+     OPEN / CLOSE PLAYER
+     ================================================================ */
+  function updateModalHead(e) {
+    var bits = [e.sport, e.league, e.round].filter(Boolean).join(" · ");
+    var score = (e.score && String(e.score).trim()) ? "  •  " + e.score : "";
+    els.modalTitle.textContent = e.title || "Event";
+    els.modalMeta.textContent = statusLabel(e) + score + (bits ? "  •  " + bits : "");
+  }
+
+  function openPlayer(e) {
+    var url = abs(e.playerUrl);
+    if (!url) return;
+
+    returnFocus = document.activeElement;
+    playerOpen = true;
+
+    updateModalHead(e);
+    els.frame.src = url;
+    els.modal.classList.add("open");
+    document.body.style.overflow = "hidden";
+
+    // Push a history entry so the remote's BACK button exits the player.
+    try { history.pushState({ player: String(e.id) }, ""); } catch (err) {}
+
+    // Give the player iframe focus so the video controls respond to the remote.
+    setTimeout(function () {
+      try { els.frame.focus(); } catch (err) {}
+    }, 60);
+  }
+
+  function doClose() {
+    if (!playerOpen) return;
+    playerOpen = false;
+
+    els.frame.src = "about:blank";
+    els.modal.classList.remove("open");
+    document.body.style.overflow = "";
+
+    if (returnFocus && document.contains(returnFocus)) {
+      try { returnFocus.focus({ preventScroll: true }); } catch (err) {}
+    }
+    returnFocus = null;
+    lastSig = "";          // force the grid to refresh
+    renderGrid(true);
+    renderStatusLine();
+  }
+
+  function requestClose() {
+    if (history.state && history.state.player) history.back();
+    else doClose();
+  }
+
+  window.addEventListener("popstate", function () {
+    if (playerOpen) doClose();
+  });
+
+  els.closeBtn.addEventListener("click", requestClose);
+
+  /* ================================================================
+     GRID INTERACTION
+     ================================================================ */
+  els.grid.addEventListener("click", function (ev) {
+    var card = ev.target.closest(".card");
+    if (!card) return;
+    var e = byId[card.dataset.id];
+    if (e) openPlayer(e);
+  });
+
+  /* ================================================================
+     DATA
+     ================================================================ */
+  function load(silent) {
+    if (!silent) {
+      els.grid.innerHTML = skeletonHTML();
+      els.statusline.textContent = "Loading events…";
+    }
+
+    fetch(API_URL, { cache: "no-store" })
+      .then(function (res) {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      })
+      .then(function (data) {
+        var list = Array.isArray(data) ? data
+                 : (data && Array.isArray(data.events)) ? data.events : [];
+
+        var clean = [];
+        for (var i = 0; i < list.length; i++) {
+          if (list[i] && list[i].id != null) clean.push(list[i]);
+        }
+        events = clean;
+
+        byId = {};
+        for (var j = 0; j < events.length; j++) byId[String(events[j].id)] = events[j];
+
+        // Never disturb the UI while someone is watching a stream.
+        if (playerOpen) return;
+
+        renderChips();
+        renderStatusLine();
+        renderGrid(!silent);
+      })
+      .catch(function (err) {
+        console.error("[events]", err);
+        if (playerOpen) return;
+        if (!events.length) {
+          els.grid.innerHTML =
+            '<div class="state">' +
+              '<div class="em">📡</div>' +
+              "<h3>Couldn’t load events</h3>" +
+              "<p>" + esc(err && err.message ? err.message : "The feed is unreachable right now.") + "</p>" +
+              '<button class="nav-item retry" id="retryBtn">Try again</button>' +
+            "</div>";
+          els.statusline.textContent = "—";
+
+          var rb = document.getElementById("retryBtn");
+          if (rb) {
+            rb.addEventListener("click", function () { load(false); });
+            rb.focus();
+          }
+        }
+      });
+  }
+
+  /* ================================================================
+     BOOT
+     ================================================================ */
+  load(false);
+  setInterval(function () { if (!playerOpen) load(true); }, REFRESH_MS);
+
+  // First D-pad press anywhere drops focus onto the first item.
+  document.addEventListener("keydown", function (ev) {
+    if (!dirFromEvent(ev)) return;
+    if (document.activeElement === document.body) {
+      var items = navItems();
+      if (items.length) { ev.preventDefault(); items[0].focus(); }
+    }
+  }, true);
+
+})();
+</script>
+</body>
+</html>
